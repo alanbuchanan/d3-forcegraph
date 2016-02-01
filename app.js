@@ -67,8 +67,8 @@ var update = (nodes, links) => {
 d3.json(url, (error, data) => {
     // var network = FlickrUtils.getTagNetwork(data, 10)
     var nodes = [
-        {id: '123', value: 20, name: 'cuddlysnug'},
-        {id: '234', value: 19, name: 'cuddlymon'},
+        {value: 10, name: data[0].author.username, image: data[0].author.picture},
+        {value: 11, name: data[0].link, url: data[0].link},
 
     ];
     var links = [
