@@ -9,7 +9,7 @@ var svg = d3.select('#chart')
             .attr('height', h);
 
 var force;
-var rScale = d3.scale.linear().range([4, 15]);
+var rScale = d3.scale.linear().range([4, 7]);
 var edgeColScale = d3.scale.linear().range(['#DADADA', 'black'])
 
 var update = (nodes, links) => {
@@ -49,7 +49,7 @@ var update = (nodes, links) => {
         .style('stroke', d => edgeColScale(d.value))
         .attr("class", d => "link")
 
-    var imgSide = 30;
+    var imgSide = 20;
     var imgMiddlePoint = imgSide / 2;
 
     var circle = svg.append("g").selectAll("circle")
@@ -80,36 +80,52 @@ var update = (nodes, links) => {
 
 
 d3.json(url, (error, data) => {
-    // var network = FlickrUtils.getTagNetwork(data, 10)
+
+    data = data.slice(0, 50)
     
     var getDomainOnly = url => {
-        url = url.match(/\/{2}(.*?)\//g);
-        return url.toString().replace(/\//g, '')
+            url = url.match(/\/{2}(.*?)\//g);
+        if (url) {
+            url = url.toString().replace(/\//g, '');
+            url = url.replace(/www./g, '')
+            console.log(`'${url}'`);
+            return url;
+        }
+    }
+    
+    // For testing:
+    // var nodes = [
+    //     {value: 0, name: data[0].author.username, image: data[0].author.picture},
+    //     {value: 0, name: data[1].author.username, image: data[1].author.picture},
+    //     {value: 0, name: data[2].author.username, image: data[2].author.picture},
+    //     {value: 1, name: getDomainOnly(data[0].link), url: data[0].link},
+    //     {value: 1, name: getDomainOnly(data[1].link), url: data[1].link},
+    //     {value: 1, name: getDomainOnly(data[2].link), url: data[2].link},
+
+    // ];
+    // var links = [
+    //     {source: nodes[0], target: nodes[3]},
+    //     {source: nodes[0], target: nodes[4]},
+    //     {source: nodes[0], target: nodes[5]},
+    //     {source: nodes[1], target: nodes[3]},
+    //     {source: nodes[2], target: nodes[3]},
+    //     {source: nodes[2], target: nodes[5]},
+    // ];
+
+    var nodes = [];
+    var links = [];
+    for(var i = 0; i < data.length; i++){
+        nodes.push(
+            {value: 0, name: data[i].author.username, image: data[i].author.picture},
+            {value: 1, name: getDomainOnly(data[i].link), url: data[i].link}
+        );
+        links.push({ source: nodes[i], target: nodes[i + 1] });
+        i++;
     }
 
-    var nodes = [
-        {value: 0, name: data[0].author.username, image: data[0].author.picture},
-        {value: 0, name: data[1].author.username, image: data[1].author.picture},
-        {value: 0, name: data[2].author.username, image: data[2].author.picture},
-        {value: 1, name: getDomainOnly(data[0].link), url: data[0].link},
-        {value: 1, name: getDomainOnly(data[1].link), url: data[1].link},
-        {value: 1, name: getDomainOnly(data[2].link), url: data[2].link},
-        {value: 1, name: getDomainOnly(data[3].link), url: data[3].link},
-        {value: 1, name: getDomainOnly(data[4].link), url: data[4].link},
-        {value: 1, name: getDomainOnly(data[5].link), url: data[5].link},
 
-    ];
-    var links = [
-        {source: nodes[0], target: nodes[3]},
-        {source: nodes[0], target: nodes[4]},
-        {source: nodes[0], target: nodes[5]},
-        {source: nodes[1], target: nodes[3]},
-        {source: nodes[2], target: nodes[3]},
-        {source: nodes[2], target: nodes[8]},
-    ];
-
-    update(nodes, links)
     console.log('nodes:', nodes)
     console.log('links:', links)
-    console.log(data)
-});0
+    console.log('data:', data)
+    update(nodes, links)
+});
