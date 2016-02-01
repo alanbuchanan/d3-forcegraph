@@ -9,7 +9,7 @@ var svg = d3.select('#chart')
             .attr('height', h);
 
 var force;
-var rScale = d3.scale.linear().range([13, 15]);
+var rScale = d3.scale.linear().range([4, 15]);
 var edgeColScale = d3.scale.linear().range(['#DADADA', 'black'])
 
 var update = (nodes, links) => {
@@ -25,8 +25,9 @@ var update = (nodes, links) => {
 
     var tick = e => {
         path.attr("d", linkArc);
-        circle.attr("transform", transform);
+        image.attr("transform", transform);
         text.attr('transform', transform)
+        circle.attr('transform', transform)
     }
 
     force = d3.layout.force()
@@ -35,6 +36,7 @@ var update = (nodes, links) => {
                 .size([w, h])
                 .linkDistance(60)
                 .charge(-300)
+                .gravity(0.1)
                 .on("tick", tick)
                 .start();
 
@@ -47,10 +49,23 @@ var update = (nodes, links) => {
         .style('stroke', d => edgeColScale(d.value))
         .attr("class", d => "link")
 
+    var imgSide = 30;
+    var imgMiddlePoint = imgSide / 2;
+
     var circle = svg.append("g").selectAll("circle")
         .data(force.nodes())
       .enter().append("circle")
         .attr("r", d => rScale(d.value))
+        .call(force.drag);
+
+    var image = svg.append("g").selectAll("image")
+        .data(force.nodes())
+      .enter().append("svg:image")
+        .attr('xlink:href', d => d.image || null)
+        .attr("width", imgSide)
+        .attr("height", imgSide)
+        .attr("x", -imgMiddlePoint)
+        .attr("y", -imgMiddlePoint)
         .call(force.drag);
 
     var text = svg.append("g").selectAll("text")
@@ -66,17 +81,35 @@ var update = (nodes, links) => {
 
 d3.json(url, (error, data) => {
     // var network = FlickrUtils.getTagNetwork(data, 10)
+    
+    var getDomainOnly = url => {
+        url = url.match(/\/{2}(.*?)\//g);
+        return url.toString().replace(/\//g, '')
+    }
+
     var nodes = [
-        {value: 10, name: data[0].author.username, image: data[0].author.picture},
-        {value: 11, name: data[0].link, url: data[0].link},
+        {value: 0, name: data[0].author.username, image: data[0].author.picture},
+        {value: 0, name: data[1].author.username, image: data[1].author.picture},
+        {value: 0, name: data[2].author.username, image: data[2].author.picture},
+        {value: 1, name: getDomainOnly(data[0].link), url: data[0].link},
+        {value: 1, name: getDomainOnly(data[1].link), url: data[1].link},
+        {value: 1, name: getDomainOnly(data[2].link), url: data[2].link},
+        {value: 1, name: getDomainOnly(data[3].link), url: data[3].link},
+        {value: 1, name: getDomainOnly(data[4].link), url: data[4].link},
+        {value: 1, name: getDomainOnly(data[5].link), url: data[5].link},
 
     ];
     var links = [
-        {source: nodes[0], target: nodes[1]},
+        {source: nodes[0], target: nodes[3]},
+        {source: nodes[0], target: nodes[4]},
+        {source: nodes[0], target: nodes[5]},
+        {source: nodes[1], target: nodes[3]},
+        {source: nodes[2], target: nodes[3]},
+        {source: nodes[2], target: nodes[8]},
     ];
 
     update(nodes, links)
     console.log('nodes:', nodes)
     console.log('links:', links)
     console.log(data)
-});
+});0
