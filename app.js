@@ -1,4 +1,4 @@
-var url = 'https://api.flickr.com/services/rest/?method=flickr.interestingness.getList&api_key=bce47572d3495252126d1d9a817e8077&extras=tags%2Ccount_views&per_page=500&format=json&nojsoncallback=1';
+var url = 'http://www.freecodecamp.com/news/hot';
 
 var w = 600,
     h = 600;
@@ -9,7 +9,7 @@ var svg = d3.select('#chart')
             .attr('height', h);
 
 var force;
-var rScale = d3.scale.linear().range([5, 15]);
+var rScale = d3.scale.linear().range([13, 15]);
 var edgeColScale = d3.scale.linear().range(['#DADADA', 'black'])
 
 var update = (nodes, links) => {
@@ -65,8 +65,18 @@ var update = (nodes, links) => {
 
 
 d3.json(url, (error, data) => {
-    var network = FlickrUtils.getTagNetwork(data, 10)
-    update(network.nodes, network.edges);
-    console.log('nodes:', network.nodes);
-    console.log('links:', network.edges)
+    // var network = FlickrUtils.getTagNetwork(data, 10)
+    var nodes = [
+        {id: '123', value: 20, name: 'cuddlysnug'},
+        {id: '234', value: 19, name: 'cuddlymon'},
+
+    ];
+    var links = [
+        {source: nodes[0], target: nodes[1]},
+    ];
+
+    update(nodes, links)
+    console.log('nodes:', nodes)
+    console.log('links:', links)
+    console.log(data)
 });
