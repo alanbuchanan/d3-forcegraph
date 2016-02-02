@@ -8,23 +8,14 @@ d3.json(url, (error, data) => {
     var getDomainOnly = url => {
         url = url.match(/\/{2}(.*?)\//g);
         if (url) {
+            if (url[url.length - 1] !== '/') url += '/'
             url = url.toString().replace(/\//g, '');
             url = url.replace(/www./g, '')
-            console.log(`'${url}'`);
             return url;
         }
     }
 
     var links = []
-    // links.push(  {source: "alanbuchanan", target: "quora.com", type: "licensing"},
-    //   {source: "alanbuchanan", target: "f.com", type: "licensing"},
-    //   {source: "alanbuchanan", target: "g.com", type: "licensing"},
-    //   {source: "alanbuchanan", target: "medium.com", type: "licensing"},
-    //   {source: "alanbuchanan", target: "medium.com", type: "licensing"},
-    //   {source: "alanbuchanan", target: "medium.com", type: "licensing"},
-    //   {source: "alanbuchanan", target: "medium.com", type: "resolved"},
-    //   {source: "alanbuchanan", target: "medium.com", type: "suit"},
-    //   {source: "tony", target: "medium.com", type: "suit"},)
 
     data.forEach((e, i) => {
         links.push({source: e.author.username, target: getDomainOnly(e.link), type: 'licensing', image: e.author.picture})
@@ -32,8 +23,8 @@ d3.json(url, (error, data) => {
 
     var nodes = {};
 
-    // Compute the distinct nodes from the links.
     links.forEach(function(link) {
+        console.log(link)
       link.source = nodes[link.source] || (nodes[link.source] = {name: link.source, image: link.image});
       link.target = nodes[link.target] || (nodes[link.target] = {name: link.target});
     });
@@ -42,6 +33,7 @@ d3.json(url, (error, data) => {
     console.log('links:', links)
 
     var rScale = d3.scale.linear().range([1, 3])
+    var imgScale = d3.scale.linear().range([13, 16]);
 
     var width = 800,
         height = 800;
@@ -50,15 +42,15 @@ d3.json(url, (error, data) => {
         .nodes(d3.values(nodes))
         .links(links)
         .size([width, height])
-        .linkDistance(60)
-        .charge(-100)
+        .gravity(0.5)
+        .linkDistance(80)
+        .charge(-800)
         .on("tick", tick)
         .start();
 
     var svg = d3.select("body").append("svg")
         .attr("width", width)
         .attr("height", height);
-
 
 
     // Per-type markers, as they don't inherit styles.
@@ -92,34 +84,24 @@ d3.json(url, (error, data) => {
         .on('mouseover', tip.show)
         .on('mouseout', tip.hide)
 
-    // var text = svg.append("g").selectAll("text")
-    //     .data(force.nodes())
-    //   .enter().append("text")
-    //     .attr("x", 8)
-    //     .attr("y", ".31em")
-    //     .text(function(d) { return d.name; });
-
     var avatarSize = 30;
 
     var image = svg.append("g").selectAll("image")
         .data(force.nodes())
       .enter().append("svg:image")
         .attr('xlink:href', d => d.image || null)
-        .attr("width", avatarSize)
-        .attr("height", avatarSize)
-        .attr("x", -avatarSize / 2)
-        .attr("y", -avatarSize / 2)
+        .attr("width", d => imgScale(d.weight))
+        .attr("height", d => imgScale(d.weight))
+        .attr("x", d => -imgScale(d.weight) / 2)
+        .attr("y", d => -imgScale(d.weight) / 2)
         .call(force.drag)
         .on('mouseover', tip.show)
         .on('mouseout', tip.hide)
-
-        //TODO: the author images aren't showing up properly
 
     // Use elliptical arc path segments to doubly-encode directionality.
     function tick() {
       path.attr("d", linkArc);
       circle.attr("transform", transform);
-      // text.attr("transform", transform);
       image.attr('transform', transform)
     }
 
@@ -127,10 +109,10 @@ d3.json(url, (error, data) => {
       var dx = d.target.x - d.source.x,
           dy = d.target.y - d.source.y,
           dr = Math.sqrt(dx * dx + dy * dy);
-      return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
+      return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
     }
 
     function transform(d) {
-      return "translate(" + d.x + "," + d.y + ")";
+      return `translate(${d.x}, ${d.y})`;
     }
 })
