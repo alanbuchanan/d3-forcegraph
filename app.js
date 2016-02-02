@@ -1,90 +1,12 @@
+
 var url = 'http://www.freecodecamp.com/news/hot';
-
-var w = 600,
-    h = 600;
-
-var svg = d3.select('#chart')
-            .append('svg')
-            .attr('width', w)
-            .attr('height', h);
-
-var force;
-var rScale = d3.scale.linear().range([4, 7]);
-var edgeColScale = d3.scale.linear().range(['#DADADA', 'black'])
-
-var update = (nodes, links) => {
-
-    var linkArc = d => {
-      var dx = d.target.x - d.source.x,
-          dy = d.target.y - d.source.y,
-          dr = Math.sqrt(dx * dx + dy * dy);
-      return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
-    }
-
-    var transform = d => `translate(${d.x}, ${d.y})`;
-
-    var tick = e => {
-        path.attr("d", linkArc);
-        image.attr("transform", transform);
-        text.attr('transform', transform)
-        circle.attr('transform', transform)
-    }
-
-    force = d3.layout.force()
-                .nodes(nodes)
-                .links(links)
-                .size([w, h])
-                .linkDistance(60)
-                .charge(-300)
-                .gravity(0.1)
-                .on("tick", tick)
-                .start();
-
-    rScale.domain(d3.extent(nodes, d => d.value))
-    edgeColScale.domain(d3.extent(links, d => d.value))
-
-    var path = svg.append("g").selectAll("path")
-        .data(force.links())
-      .enter().append("path")
-        .style('stroke', d => edgeColScale(d.value))
-        .attr("class", d => "link")
-
-    var imgSide = 20;
-    var imgMiddlePoint = imgSide / 2;
-
-    var circle = svg.append("g").selectAll("circle")
-        .data(force.nodes())
-      .enter().append("circle")
-        .attr("r", d => rScale(d.value))
-        .call(force.drag);
-
-    var image = svg.append("g").selectAll("image")
-        .data(force.nodes())
-      .enter().append("svg:image")
-        .attr('xlink:href', d => d.image || null)
-        .attr("width", imgSide)
-        .attr("height", imgSide)
-        .attr("x", -imgMiddlePoint)
-        .attr("y", -imgMiddlePoint)
-        .call(force.drag);
-
-    var text = svg.append("g").selectAll("text")
-        .data(force.nodes())
-      .enter().append("text")
-        .attr("x", 8)
-        .attr("y", ".31em")
-        .text(d => d.name);
-
-};
-
-
-
 d3.json(url, (error, data) => {
+    if (error) {console.log('ERR:', error)}
 
-    data = data.slice(0, 50)
+    console.log('data[0]:', data[0])
     
     var getDomainOnly = url => {
-            url = url.match(/\/{2}(.*?)\//g);
+        url = url.match(/\/{2}(.*?)\//g);
         if (url) {
             url = url.toString().replace(/\//g, '');
             url = url.replace(/www./g, '')
@@ -92,40 +14,123 @@ d3.json(url, (error, data) => {
             return url;
         }
     }
-    
-    // For testing:
-    // var nodes = [
-    //     {value: 0, name: data[0].author.username, image: data[0].author.picture},
-    //     {value: 0, name: data[1].author.username, image: data[1].author.picture},
-    //     {value: 0, name: data[2].author.username, image: data[2].author.picture},
-    //     {value: 1, name: getDomainOnly(data[0].link), url: data[0].link},
-    //     {value: 1, name: getDomainOnly(data[1].link), url: data[1].link},
-    //     {value: 1, name: getDomainOnly(data[2].link), url: data[2].link},
 
-    // ];
-    // var links = [
-    //     {source: nodes[0], target: nodes[3]},
-    //     {source: nodes[0], target: nodes[4]},
-    //     {source: nodes[0], target: nodes[5]},
-    //     {source: nodes[1], target: nodes[3]},
-    //     {source: nodes[2], target: nodes[3]},
-    //     {source: nodes[2], target: nodes[5]},
-    // ];
+    var links = []
+    // links.push(  {source: "alanbuchanan", target: "quora.com", type: "licensing"},
+    //   {source: "alanbuchanan", target: "f.com", type: "licensing"},
+    //   {source: "alanbuchanan", target: "g.com", type: "licensing"},
+    //   {source: "alanbuchanan", target: "medium.com", type: "licensing"},
+    //   {source: "alanbuchanan", target: "medium.com", type: "licensing"},
+    //   {source: "alanbuchanan", target: "medium.com", type: "licensing"},
+    //   {source: "alanbuchanan", target: "medium.com", type: "resolved"},
+    //   {source: "alanbuchanan", target: "medium.com", type: "suit"},
+    //   {source: "tony", target: "medium.com", type: "suit"},)
 
-    var nodes = [];
-    var links = [];
-    for(var i = 0; i < data.length; i++){
-        nodes.push(
-            {value: 0, name: data[i].author.username, image: data[i].author.picture},
-            {value: 1, name: getDomainOnly(data[i].link), url: data[i].link}
-        );
-        links.push({ source: nodes[i], target: nodes[i + 1] });
-        i++;
-    }
+    data.forEach((e, i) => {
+        links.push({source: e.author.username, target: getDomainOnly(e.link), type: 'licensing', image: e.author.picture})
+    })
 
+    var nodes = {};
+
+    // Compute the distinct nodes from the links.
+    links.forEach(function(link) {
+      link.source = nodes[link.source] || (nodes[link.source] = {name: link.source, image: link.image});
+      link.target = nodes[link.target] || (nodes[link.target] = {name: link.target});
+    });
 
     console.log('nodes:', nodes)
     console.log('links:', links)
-    console.log('data:', data)
-    update(nodes, links)
-});
+
+    var rScale = d3.scale.linear().range([1, 3])
+
+    var width = 800,
+        height = 800;
+
+    var force = d3.layout.force()
+        .nodes(d3.values(nodes))
+        .links(links)
+        .size([width, height])
+        .linkDistance(60)
+        .charge(-100)
+        .on("tick", tick)
+        .start();
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+
+
+    // Per-type markers, as they don't inherit styles.
+    svg.append("defs").selectAll("marker")
+        .data(["suit", "licensing", "resolved"])
+      .enter().append("marker")
+        .attr("id", function(d) { return d; })
+        .attr("viewBox", "0 -5 10 10")
+        .attr("refX", 15)
+        .attr("refY", -1.5)
+        .attr("markerWidth", 6)
+        .attr("markerHeight", 6)
+        .attr("orient", "auto")
+      .append("path")
+        .attr("d", "M0,-5L10,0L0,5")
+
+    var tip = d3.tip().attr('class', 'd3-tip').html(d => d.name);
+    svg.call(tip);
+
+    var path = svg.append("g").selectAll("path")
+        .data(force.links())
+      .enter().append("path")
+        .attr("class", function(d) { return "link " + d.type; })
+        .attr("marker-end", function(d) { return "url(#" + d.type + ")"; });
+
+    var circle = svg.append("g").selectAll("circle")
+        .data(force.nodes())
+      .enter().append("circle")
+        .attr("r", d => rScale(d.weight))
+        .call(force.drag)
+        .on('mouseover', tip.show)
+        .on('mouseout', tip.hide)
+
+    // var text = svg.append("g").selectAll("text")
+    //     .data(force.nodes())
+    //   .enter().append("text")
+    //     .attr("x", 8)
+    //     .attr("y", ".31em")
+    //     .text(function(d) { return d.name; });
+
+    var avatarSize = 30;
+
+    var image = svg.append("g").selectAll("image")
+        .data(force.nodes())
+      .enter().append("svg:image")
+        .attr('xlink:href', d => d.image || null)
+        .attr("width", avatarSize)
+        .attr("height", avatarSize)
+        .attr("x", -avatarSize / 2)
+        .attr("y", -avatarSize / 2)
+        .call(force.drag)
+        .on('mouseover', tip.show)
+        .on('mouseout', tip.hide)
+
+        //TODO: the author images aren't showing up properly
+
+    // Use elliptical arc path segments to doubly-encode directionality.
+    function tick() {
+      path.attr("d", linkArc);
+      circle.attr("transform", transform);
+      // text.attr("transform", transform);
+      image.attr('transform', transform)
+    }
+
+    function linkArc(d) {
+      var dx = d.target.x - d.source.x,
+          dy = d.target.y - d.source.y,
+          dr = Math.sqrt(dx * dx + dy * dy);
+      return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
+    }
+
+    function transform(d) {
+      return "translate(" + d.x + "," + d.y + ")";
+    }
+})
